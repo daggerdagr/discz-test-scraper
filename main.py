@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+from datetime import datetime
 import json
+import spotipy
 import time
+import logging
 
 
 '''
@@ -14,11 +16,19 @@ export SPOTIPY_REDIRECT_URI=https://localhost:8888/callback
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 def main():
+	start_time = datetime.now()
+	logging.basicConfig(filename=start_time.strftime("%Y%m%d-%H%M%S")+".log", level=logging.INFO)
+	logging.info("Start time: {time}".format(time=start_time))
+	
+	genres = spotify.recommendation_genre_seeds()['genres']
+
 	total_result = dict() # id to artist
 
 	# Fetching approximately top 1000 artists per year from 2023 to 0
+	query_param_fmt = "year:{year} genre:{genre}"
 	for year in range(2023, 1889, -1):
-		queryForParam("year:" + str(year), total_result)
+		for genre in genres:
+			queryForParam(query_param_fmt.format(year=year, genre=genre), total_result)
 		# time.sleep(60)
 	queryForParam("year:0-1889", total_result)
 
@@ -26,9 +36,12 @@ def main():
 
 	with open("results.json", "w") as outfile:
 		outfile.write(json_object)
+	end_time = datetime.now()
+	logging.info("End time: {time}".format(time=end_time))
+	logging.info("Total time spent: {total}".format(total=end_time - start_time))
 
 def queryForParam(query_param, total_result):
-	print("Fetching for query parameters: " + query_param)
+	logging.info("Fetching for query parameters: " + query_param)
 	offset = 0
 	limit = 50
 	valid = True
@@ -42,9 +55,9 @@ def queryForParam(query_param, total_result):
 
 			offset += limit
 		except spotipy.SpotifyException:
-			print("Query maximum offset hit at: " + str(offset))
+			logging.info("Query maximum offset hit at: " + str(offset))
 			valid = False
-	print("Total result so far: " + str(len(total_result)))
+	logging.info("Total result so far: " + str(len(total_result)))
 	return total_result
 	
 	
