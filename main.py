@@ -14,28 +14,27 @@ export SPOTIPY_REDIRECT_URI=https://localhost:8888/callback
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 def main():
-
 	total_result = dict() # id to artist
-	
-	for year in range(2023, 1900, -1):
-		queryForYear(year, total_result)
-		# time.sleep(60)
 
-		print("Total result so far: " + str(len(total_result)))
+	# Fetching approximately top 1000 artists per year from 2023 to 0
+	for year in range(2023, 1889, -1):
+		queryForParam("year:" + str(year), total_result)
+		# time.sleep(60)
+	queryForParam("year:0-1889", total_result)
 
 	json_object = json.dumps(total_result)
 
 	with open("results.json", "w") as outfile:
 		outfile.write(json_object)
 
-def queryForYear(year, total_result):
-	print("Fetching for year: " + str(year))
+def queryForParam(query_param, total_result):
+	print("Fetching for query parameters: " + query_param)
 	offset = 0
 	limit = 50
 	valid = True
 	while valid and offset < 1000:
 		try:
-			query_result = spotify.search("year:"+str(year), limit=limit, offset=offset, type='artist', market='US')
+			query_result = spotify.search(query_param, limit=limit, offset=offset, type='artist', market='US')
 			
 			for item in query_result['artists']['items']:
 				artist = simplifyArtistItem(item)
@@ -45,7 +44,7 @@ def queryForYear(year, total_result):
 		except spotipy.SpotifyException:
 			print("Query maximum offset hit at: " + str(offset))
 			valid = False
-
+	print("Total result so far: " + str(len(total_result)))
 	return total_result
 	
 	
