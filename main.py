@@ -19,8 +19,8 @@ def main():
 
 	total_result = dict() # id to artist
 
-	# artistQueryForParam("year:0-1889", total_result) # Query Stage C
-	fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
+	artistQueryForParam("year:0-1889", total_result) # Query Stage C
+	# fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
 	# fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
 
 	json_object = json.dumps(total_result)
@@ -35,7 +35,7 @@ def main():
 def fetchArtistsFromHipsterAlbums(total_result):
 	# Fetching artists from hipster albums every year from 2023 to 0
 	query_param_fmt = "tag:hipster year:{year}"
-	for year in range(2023, 1899, -1):		
+	for year in range(2023, 1889, -1):		
 		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
 
 def fetchArtistsFromAlbumQuery(query_param, total_result):
