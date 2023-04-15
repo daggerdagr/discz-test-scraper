@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from spotipy.oauth2 import SpotifyClientCredentials
 from datetime import datetime
+from spotipy.oauth2 import SpotifyClientCredentials
 import json
+import logging
 import spotipy
 import time
-import logging
 
 
 '''
