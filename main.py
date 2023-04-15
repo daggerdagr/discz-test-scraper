@@ -58,17 +58,17 @@ def fetchArtistsFromAlbumQuery(query_param, total_result):
 					for incomplete_artist in album['artists']:
 						artist_ids.append(incomplete_artist['id'])
 
-			querySegmentStart = 0
-			querySegmentEnd = 50
+			artistCheckSegmentStart = 0
+			artistCheckSegmentEnd = 50
 
-			while querySegmentStart < len(artist_ids):
-				querySegment = artist_ids[querySegmentStart:querySegmentEnd]
-				artistsJson = spotify.artists(querySegment)['artists']
+			while artistCheckSegmentStart < len(artist_ids):
+				artistCheckSegment = artist_ids[artistCheckSegmentStart:artistCheckSegmentEnd]
+				artistsJson = spotify.artists(artistCheckSegment)['artists']
 				for artistJson in artistsJson:
 					artist = simplifyArtistItem(artistJson)
 					total_result[artist['id']] = artist
-				querySegmentStart = querySegmentEnd
-				querySegmentEnd += 50
+				artistCheckSegmentStart = artistCheckSegmentEnd
+				artistCheckSegmentEnd += 50
 
 			offset += limit
 		except spotipy.SpotifyException:
