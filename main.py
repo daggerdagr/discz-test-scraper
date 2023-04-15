@@ -8,11 +8,6 @@ import spotipy
 import time
 
 
-'''
-export SPOTIPY_CLIENT_ID=d44c1b8a65604265a5abc858294aa830
-export SPOTIPY_CLIENT_SECRET=09ff84f3e5774851858751621647985e
-export SPOTIPY_REDIRECT_URI=https://localhost:8888/callback
-'''
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 def main():
@@ -24,8 +19,9 @@ def main():
 
 	total_result = dict() # id to artist
 
-	fetchArtistsFromHipsterAlbums(total_result)
-	# fetchTop1000ArtistPerGenre(total_result, genres)
+	# artistQueryForParam("year:0-1889", total_result) # Query Stage C
+	fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
+	# fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
 
 	json_object = json.dumps(total_result)
 
@@ -39,9 +35,8 @@ def main():
 def fetchArtistsFromHipsterAlbums(total_result):
 	# Fetching artists from hipster albums every year from 2023 to 0
 	query_param_fmt = "tag:hipster year:{year}"
-	for year in range(2023, 1900, -1):		
+	for year in range(2023, 1899, -1):		
 		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
-	fetchArtistsFromAlbumQuery("year:0-1900", total_result)
 
 def fetchArtistsFromAlbumQuery(query_param, total_result):
 	logging.info("Fetching for album query parameters: " + query_param)
@@ -75,16 +70,16 @@ def fetchArtistsFromAlbumQuery(query_param, total_result):
 			valid = False
 	logging.info("Album query offset maximum hit at: " + str(offset))
 	logging.info("Total result so far: " + str(len(total_result)))
+	logging.info("Current time: {time}".format(time=datetime.now()))
 	return total_result
 
 def fetchTop1000ArtistPerGenre(total_result, genres):
-	# Fetching approximately top 1000 artists per year from 2023 to 0
+	# Fetching approximately top 1000 artists per year from 2023 to 1900
 	query_param_fmt = "year:{year} genre:{genre}"
 	for year in range(2023, 1889, -1):
 		for genre in genres:
 			artistQueryForParam(query_param_fmt.format(year=year, genre=genre), total_result)
 		# time.sleep(60)
-	artistQueryForParam("year:0-1889", total_result)
 
 def artistQueryForParam(query_param, total_result):
 	logging.info("Fetching for query parameters: " + query_param)
