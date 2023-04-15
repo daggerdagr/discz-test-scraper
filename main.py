@@ -24,7 +24,7 @@ def main():
 
 	total_result = dict() # id to artist
 
-	fetchHipsterAlbumArtists(total_result)
+	fetchArtistsFromHipsterAlbums(total_result)
 	# fetchTop1000ArtistPerGenre(total_result, genres)
 
 	json_object = json.dumps(total_result)
@@ -35,14 +35,22 @@ def main():
 	logging.info("End time: {time}".format(time=end_time))
 	logging.info("Total time spent: {total}".format(total=end_time - start_time))
 
-def fetchHipsterAlbumArtists(total_result):
-	# logging.info("Fetching for query parameters: " + query_param)
+
+def fetchArtistsFromHipsterAlbums(total_result):
+	# Fetching artists from hipster albums every year from 2023 to 0
+	query_param_fmt = "tag:hipster year:{year}"
+	for year in range(2023, 1900, -1):		
+		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
+	fetchArtistsFromAlbumQuery("year:0-1900", total_result)
+
+def fetchArtistsFromAlbumQuery(query_param, total_result):
+	logging.info("Fetching for album query parameters: " + query_param)
 	offset = 0
 	limit = 50
 	valid = True
 	while valid and offset < 1000:
 		try:
-			query_result = spotify.search("tag:hipster", limit=limit, offset=offset, type='album', market='US')
+			query_result = spotify.search(query_param, limit=limit, offset=offset, type='album', market='US')
 			
 			artist_ids = []
 			for album in query_result['albums']['items']:
@@ -54,13 +62,12 @@ def fetchHipsterAlbumArtists(total_result):
 				artistsJson = spotify.artists([id])['artists']
 				for artistJson in artistsJson:
 					artist = simplifyArtistItem(artistJson)
-					print(artist)
 				total_result[id] = artist
 
 			offset += limit
 		except spotipy.SpotifyException:
 			valid = False
-	logging.info("Query maximum offset hit at: " + str(offset))
+	logging.info("Album query offset maximum hit at: " + str(offset))
 	logging.info("Total result so far: " + str(len(total_result)))
 	return total_result
 
