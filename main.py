@@ -20,17 +20,12 @@ def main():
 	logging.basicConfig(filename=start_time.strftime("%Y%m%d-%H%M%S")+".log", level=logging.INFO)
 	logging.info("Start time: {time}".format(time=start_time))
 	
-	genres = spotify.recommendation_genre_seeds()['genres']
+	genres = spotify.recommendation_genre_seeds()['genres'][:1]
 
 	total_result = dict() # id to artist
 
-	# Fetching approximately top 1000 artists per year from 2023 to 0
-	query_param_fmt = "year:{year} genre:{genre}"
-	for year in range(2023, 1889, -1):
-		for genre in genres:
-			queryForParam(query_param_fmt.format(year=year, genre=genre), total_result)
-		# time.sleep(60)
-	queryForParam("year:0-1889", total_result)
+	fetchHipsterAlbumArtists(total_result)
+	# fetchTop1000ArtistPerGenre(total_result, genres)
 
 	json_object = json.dumps(total_result)
 
@@ -40,7 +35,45 @@ def main():
 	logging.info("End time: {time}".format(time=end_time))
 	logging.info("Total time spent: {total}".format(total=end_time - start_time))
 
-def queryForParam(query_param, total_result):
+def fetchHipsterAlbumArtists(total_result):
+	# logging.info("Fetching for query parameters: " + query_param)
+	offset = 0
+	limit = 50
+	valid = True
+	while valid and offset < 1000:
+		try:
+			query_result = spotify.search("tag:hipster", limit=limit, offset=offset, type='album', market='US')
+			
+			artist_ids = []
+			for album in query_result['albums']['items']:
+				if album:
+					for incomplete_artist in album['artists']:
+						artist_ids.append(incomplete_artist['id'])
+
+			for id in artist_ids:
+				artistsJson = spotify.artists([id])['artists']
+				for artistJson in artistsJson:
+					artist = simplifyArtistItem(artistJson)
+					print(artist)
+				total_result[id] = artist
+
+			offset += limit
+		except spotipy.SpotifyException:
+			valid = False
+	logging.info("Query maximum offset hit at: " + str(offset))
+	logging.info("Total result so far: " + str(len(total_result)))
+	return total_result
+
+def fetchTop1000ArtistPerGenre(total_result, genres):
+	# Fetching approximately top 1000 artists per year from 2023 to 0
+	query_param_fmt = "year:{year} genre:{genre}"
+	for year in range(2023, 1889, -1):
+		for genre in genres:
+			artistQueryForParam(query_param_fmt.format(year=year, genre=genre), total_result)
+		# time.sleep(60)
+	artistQueryForParam("year:0-1889", total_result)
+
+def artistQueryForParam(query_param, total_result):
 	logging.info("Fetching for query parameters: " + query_param)
 	offset = 0
 	limit = 50
