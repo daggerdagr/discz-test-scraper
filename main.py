@@ -25,7 +25,7 @@ def main():
 	artistQueryForParam("year:0-" + str(earliestYear), total_result) # Query Stage C
 	fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
 	fetchRelatedArtistsFromCurrentArtists(total_result) # Query Stage D
-	# fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
+	fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
 
 	json_object = json.dumps(total_result)
 
