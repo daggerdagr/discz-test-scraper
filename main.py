@@ -19,8 +19,12 @@ def main():
 
 	total_result = dict() # id to artist
 
-	artistQueryForParam("year:0-1889", total_result) # Query Stage C
-	# fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
+	latestYear = 2023
+	earliestYear = 1899
+
+	artistQueryForParam("year:0-" + str(earliestYear), total_result) # Query Stage C
+	fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
+	fetchRelatedArtistsFromCurrentArtists(total_result) # Query Stage D
 	# fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
 
 	json_object = json.dumps(total_result)
@@ -31,11 +35,22 @@ def main():
 	logging.info("End time: {time}".format(time=end_time))
 	logging.info("Total time spent: {total}".format(total=end_time - start_time))
 
+def fetchRelatedArtistsFromCurrentArtists(total_result):
+	logging.info("Fetching related artists from currently collected artists")
+	for artist_id in set(total_result.keys()):
+		relatedArtists = spotify.artist_related_artists(artist_id)['artists']
+		logging.info("-- Found related artists: " + str(len(relatedArtists)))
+		for artistJson in relatedArtists:
+			artist = simplifyArtistJson(artistJson)
+			total_result[artist['id']] = artist
+		logging.info("Total result so far: " + str(len(total_result)))
+		logging.info("Current time: {time}".format(time=datetime.now()))
+
 
 def fetchArtistsFromHipsterAlbums(total_result):
-	# Fetching artists from hipster albums every year from 2023 to 0
+	# Fetching artists from hipster albums every year from latestYear to 0
 	query_param_fmt = "tag:hipster year:{year}"
-	for year in range(2023, 1889, -1):		
+	for year in range(latestYear, earliestYear, -1):		
 		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
 
 def fetchArtistsFromAlbumQuery(query_param, total_result):
@@ -60,7 +75,7 @@ def fetchArtistsFromAlbumQuery(query_param, total_result):
 				artistCheckSegment = artist_ids[artistCheckSegmentStart:artistCheckSegmentEnd]
 				artistsJson = spotify.artists(artistCheckSegment)['artists']
 				for artistJson in artistsJson:
-					artist = simplifyArtistItem(artistJson)
+					artist = simplifyArtistJson(artistJson)
 					total_result[artist['id']] = artist
 				artistCheckSegmentStart = artistCheckSegmentEnd
 				artistCheckSegmentEnd += 50
@@ -74,9 +89,9 @@ def fetchArtistsFromAlbumQuery(query_param, total_result):
 	return total_result
 
 def fetchTop1000ArtistPerGenre(total_result, genres):
-	# Fetching approximately top 1000 artists per year from 2023 to 1900
+	# Fetching approximately top 1000 artists per year from latestYear to 1900
 	query_param_fmt = "year:{year} genre:{genre}"
-	for year in range(2023, 1889, -1):
+	for year in range(latestYear, earliestYear, -1):
 		for genre in genres:
 			artistQueryForParam(query_param_fmt.format(year=year, genre=genre), total_result)
 		# time.sleep(60)
@@ -91,7 +106,7 @@ def artistQueryForParam(query_param, total_result):
 			query_result = spotify.search(query_param, limit=limit, offset=offset, type='artist', market='US')
 			
 			for item in query_result['artists']['items']:
-				artist = simplifyArtistItem(item)
+				artist = simplifyArtistJson(item)
 				total_result[artist['id']] = artist
 
 			offset += limit
@@ -102,12 +117,12 @@ def artistQueryForParam(query_param, total_result):
 	return total_result
 	
 	
-def simplifyArtistItem(item):
+def simplifyArtistJson(artistJson):
 	result = dict()
-	result['id'] = item['id']
-	result['name'] = item['name']
-	result['genres'] = item['genres']
-	result['popularity'] = item['popularity']
+	result['id'] = artistJson['id']
+	result['name'] = artistJson['name']
+	result['genres'] = artistJson['genres']
+	result['popularity'] = artistJson['popularity']
 	return result
 
 

@@ -14,24 +14,25 @@ python3 main.py
 ## Total amount of artists projected to be fetched
 
 ```
-99,138 (B) + 1,627,290 (A) + 989 (C) = 1,727,417 artists
+989 (C) + 99,138 (B) + 693,966 (D) + 1,627,290 (A) = 2,421,393 artists
 ```
 
 ## Queries Breakdown
 
 ### Query Stage C - Query for artists for the year range 0-1899
-- Querying for artists in the year range 0-1899 returns a finite, <1000 result. So we can execute this simple query on its own, separate from the other query stages.
+Querying for artists in the year range 0-1899 returns a finite, <1000 result. So we can execute this simple query on its own, separate from the other query stages.
 
 #### Actual result: 989 artists
 
 ### Query Stage B - Collect artists from hipster albums from 2023 to 1900.
-- General idea: Query "hipster" albums for every year from 2023 to 1900. Then, aggregate all artists from these albums.
-	- There are settings in Spotify's search API that can allow us to look for albums with less than 10% popularity, the parameter `tag:hipster`.
-	- Utilizing this query in addition to Query A does mean that we essentially have results that consist of the most popular artists and least popular artists per year, with artists that have middle popularity being missing.
+Query "hipster" albums for every year from 2023 to 1900. Then, aggregate all artists from these albums.
+- There are settings in Spotify's search API that can allow us to look for albums with less than 10% popularity, the parameter `tag:hipster`.
+- Utilizing this query in addition to Query A does mean that we essentially have results that consist of the most popular artists and least popular artists per year, with artists that have middle popularity being missing.
 
 #### Result projection: 99,138 artists
 
 ##### Script Logs
+- We run this stage for ~12 minutes and make some projections with the result:
 ```
 INFO:root:Start time: 2023-04-14 21:30:12.306595
 INFO:root:Fetching for album query parameters: tag:hipster year:2023
@@ -44,15 +45,36 @@ INFO:root:Total result so far: 34356
 INFO:root:Current time: 2023-04-14 21:42:15.922796
 # Script interrupted here
 ```
-
-- We run this stage for ~12 minutes and make some projections with the result:
+- Calculations:
 	- 43 years covered in this run.
 	- 34653 artists discovered in this run.
 	- Every query discovers 34653 / 43 ~= 806 artists
 	- Total number of queries if we execute a query for every year from 2023 to 1900: (2023 - 1900) = 123 queries
 	- Projected total of artists to be discovered: 123 queries * 806 artists = **99,138 artists**
 
+### Query Stage D - Query for related artists for all unpopular artists found so far
+- This is done after only stage B and C and not A because it's more likely we'll discover more unique artists from less popular artists - popular artists are more likely to be related to other popular artists. For example, searching for Taylor Swift lead to related artists such as Demi Lovato and Selena Gomez, all of which can be considered to be popular artists.
+#### Result projection: 693,966 artists
 
+##### Script Logs
+- We run this stage using only the results of Stage C 0-1899 and make some projections with the result:
+```
+INFO:root:Start time: 2023-04-16 13:04:25.011552
+INFO:root:Fetching for query parameters: year:0-1899
+INFO:root:Total result so far: 991
+INFO:root:Fetching related artists from currently collected artists
+...
+INFO:root:-- Found related artists: 20
+INFO:root:Total result so far: 7515
+INFO:root:Current time: 2023-04-16 13:06:36.598839
+INFO:root:End time: 2023-04-16 13:06:36.633515
+INFO:root:Total time spent: 0:02:11.621963
+```
+- Calculations:
+	- 991 artists from 0-1899
+	- 7515 artists obtained at the end
+	- 7515 artists / 991 artist ~= 8 multiplicative factor
+	- 99138 * (8 - 1) = 693,966 additional artists
 
 ### Query Stage A - Query for top ~1000 artist for every genre, for every year from 2023 to 1900
 
