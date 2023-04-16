@@ -103,7 +103,6 @@ def artistQueryForParamFn(limit, offset, query_param):
 	while execute:
 		try:
 			query_result = spotify.search(query_param, limit=limit, offset=offset, type='artist', market='US')
-			
 			for item in query_result['artists']['items']:
 				artist = simplifyArtistJson(item)
 				result[artist['id']] = artist

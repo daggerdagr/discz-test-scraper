@@ -32,7 +32,7 @@ Query "hipster" albums for every year from 2023 to 1900. Then, aggregate all art
 #### Result projection: 99,138 artists
 
 ##### Script Logs
-- We run this stage for ~12 minutes and make some projections with the result:
+- We run this stage for partially and make some projections with the result:
 ```
 INFO:root:Start time: 2023-04-14 21:30:12.306595
 INFO:root:Fetching for album query parameters: tag:hipster year:2023
@@ -93,7 +93,7 @@ INFO:root:Fetching for query parameters: year:2021 genre:forro
 # Script interrupted here
 ```
 
-- We run this stage for ~20 minutes and make some projections using the results:
+- We run this stage partially and make some projections using the results:
 	- By 20 minutes, we collected 60368 results and we've hit the specific query `year 2021, genre "forro"`
 	- Total count of genre seeds in spotify: 126 genres
 	- Total number of queries that contributed to the result of this run:
