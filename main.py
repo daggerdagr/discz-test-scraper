@@ -55,6 +55,16 @@ def fetchArtistsFromHipsterAlbums(total_result):
 	for year in range(latestYear, earliestYear, -1):
 		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
 
+def fetchArtistsFromHipsterAlbumParallelFn():
+	query_result = spotify.search(query_param, limit=limit, offset=offset, type='album', market='US')
+			
+	artist_ids = []
+	for album in query_result['albums']['items']:
+		if album:
+			for incomplete_artist in album['artists']:
+				artist_ids.append(incomplete_artist['id'])
+	return artist_ids
+
 def fetchArtistsFromAlbumQuery(query_param, total_result):
 	logging.info("Fetching for album query parameters: " + query_param)
 	offset = 0
