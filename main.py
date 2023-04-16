@@ -50,7 +50,7 @@ def fetchRelatedArtistsFromCurrentArtists(total_result):
 def fetchArtistsFromHipsterAlbums(total_result):
 	# Fetching artists from hipster albums every year from latestYear to 0
 	query_param_fmt = "tag:hipster year:{year}"
-	for year in range(latestYear, earliestYear, -1):		
+	for year in range(latestYear, earliestYear, -1):
 		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
 
 def fetchArtistsFromAlbumQuery(query_param, total_result):
