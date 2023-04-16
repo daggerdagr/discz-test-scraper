@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+from multiprocessing import Pool
 from spotipy.oauth2 import SpotifyClientCredentials
 import json
 import logging
@@ -10,21 +11,22 @@ import time
 
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
+latestYear = 2023
+earliestYear = 1899
+query_limit = 50
+
+total_result = dict() # id to artist
+
 def main():
 	start_time = datetime.now()
 	logging.basicConfig(filename=start_time.strftime("%Y%m%d-%H%M%S")+".log", level=logging.INFO)
 	logging.info("Start time: {time}".format(time=start_time))
 	
-	genres = spotify.recommendation_genre_seeds()['genres'][:1]
+	genres = spotify.recommendation_genre_seeds()['genres']
 
-	total_result = dict() # id to artist
-
-	latestYear = 2023
-	earliestYear = 1899
-
-	artistQueryForParam("year:0-" + str(earliestYear), total_result) # Query Stage C
-	fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
-	fetchRelatedArtistsFromCurrentArtists(total_result) # Query Stage D
+	# artistQueryForParam("year:0-" + str(earliestYear), total_result) # Query Stage C
+	# fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
+	# fetchRelatedArtistsFromCurrentArtists(total_result) # Query Stage D
 	fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
 
 	json_object = json.dumps(total_result)
@@ -93,27 +95,31 @@ def fetchTop1000ArtistPerGenre(total_result, genres):
 	query_param_fmt = "year:{year} genre:{genre}"
 	for year in range(latestYear, earliestYear, -1):
 		for genre in genres:
-			artistQueryForParam(query_param_fmt.format(year=year, genre=genre), total_result)
-		# time.sleep(60)
+			artistQueryForParam(query_param_fmt.format(year=year, genre=genre))
 
-def artistQueryForParam(query_param, total_result):
+def artistQueryForParamFn(limit, offset, query_param):
+	result = dict()
+	try:
+		query_result = spotify.search(query_param, limit=limit, offset=offset, type='artist', market='US')
+		
+		for item in query_result['artists']['items']:
+			artist = simplifyArtistJson(item)
+			result[artist['id']] = artist
+	except spotipy.SpotifyException:
+		logging.info("Query failed at offset: " + str(offset))
+	return result
+
+def artistQueryForParam(query_param):
 	logging.info("Fetching for query parameters: " + query_param)
-	offset = 0
-	limit = 50
-	valid = True
-	while valid and offset < 1000:
-		try:
-			query_result = spotify.search(query_param, limit=limit, offset=offset, type='artist', market='US')
-			
-			for item in query_result['artists']['items']:
-				artist = simplifyArtistJson(item)
-				total_result[artist['id']] = artist
+	p = Pool()
+	offsetRange = list(range(0, 1000, query_limit))
+	
+	results = p.starmap(artistQueryForParamFn, zip([query_limit] * len(offsetRange), offsetRange, [query_param] * len(offsetRange)))
+	for result in results:
+		total_result.update(result)
 
-			offset += limit
-		except spotipy.SpotifyException:
-			logging.info("Query maximum offset hit at: " + str(offset))
-			valid = False
 	logging.info("Total result so far: " + str(len(total_result)))
+	logging.info("Current time: {time}".format(time=datetime.now()))
 	return total_result
 	
 	
