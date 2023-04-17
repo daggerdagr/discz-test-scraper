@@ -34,7 +34,7 @@ query, parallelized:
 ## Total amount of artists projected to be fetched
 
 ```
-989 (C) + 99,138 (B) + 693,966 (D) + 1,627,290 (A) = 2,421,393 artists
+989 (C) + 99,138 (B) + 346,983 (D) + 1,627,290 (A) = 2,074,410 artists
 ```
 
 ## Queries Breakdown
@@ -92,7 +92,7 @@ INFO:root:Total time spent: 0:02:11.621963
 	- 991 artists from 0-1899
 	- 7515 artists obtained at the end
 	- 7515 artists / 991 artist ~= 8 multiplicative factor
-	- 99138 * (8 - 1) = 693,966 additional artists
+	- 99138 * (8 - 1) * 0.50 (to minimize projection) = 346,983 additional artists
 
 ### Query Stage A - Query for top ~1000 artist for every genre, for every year from 2023 to 1900
 
