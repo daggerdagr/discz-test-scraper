@@ -8,6 +8,9 @@ export SPOTIPY_CLIENT_ID=d44c1b8a65604265a5abc858294aa830
 export SPOTIPY_CLIENT_SECRET=09ff84f3e5774851858751621647985e
 export SPOTIPY_REDIRECT_URI=https://localhost:8888/callback
 
+pip install spotipy --upgrade
+# or install spotipy in general
+
 python3 main.py
 ```
 
