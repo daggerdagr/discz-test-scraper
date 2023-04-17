@@ -18,9 +18,7 @@ rm .cache && python3 main.py
 ## Speed Optimizations
 
 Speed optimizations were done by utilizing the `multiprocessing` python library:
-	- queries that has an offset parameter (e.g. the artists query and the albums query utilized in Query Stages B and A) are executed in parallel along the whole range of possible offset.
-	- queries in stage D (fetch artists related to currently collected artists) are parallelized for each artist
-
+- queries that has an offset parameter (e.g. the artists query and the albums query utilized in Query Stages B and A) are executed in parallel along the whole range of possible offset.
 ```
 query, parallelized:
 	-> query(offset=0)
@@ -30,6 +28,7 @@ query, parallelized:
 	-> query(offset=950)
 	-> query(offset=1000)
 ```
+- queries in stage D (fetch artists related to currently collected artists) are parallelized for each artist
 
 ## Total amount of artists projected to be fetched
 
