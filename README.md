@@ -15,6 +15,12 @@ rm .cache && python3 main.py
 # have to clear cache due to Spotipy bug re: querying artists' related artist
 ```
 
+## Total amount of artists projected to be fetched
+
+```
+989 (C) + 99,138 (B) + 346,983 (D) + 1,627,290 (A) = 2,074,410 artists
+```
+
 ## Speed Optimizations
 
 Speed optimizations were done by utilizing the `multiprocessing` python library:
@@ -29,12 +35,6 @@ query, parallelized:
 	-> query(offset=1000)
 ```
 - queries in stage D (fetch artists related to currently collected artists) are parallelized for each artist
-
-## Total amount of artists projected to be fetched
-
-```
-989 (C) + 99,138 (B) + 346,983 (D) + 1,627,290 (A) = 2,074,410 artists
-```
 
 ## Queries Breakdown
 
