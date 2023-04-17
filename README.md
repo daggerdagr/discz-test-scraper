@@ -11,12 +11,15 @@ export SPOTIPY_REDIRECT_URI=https://localhost:8888/callback
 pip install spotipy --upgrade
 # or install spotipy in general
 
-python3 main.py
+rm .cache && python3 main.py
+# have to clear cache due to Spotipy bug re: querying artists' related artist
 ```
 
 ## Speed Optimizations
 
-Speed optimizations were done by utilizing the `multiprocessing` python library - queries that has an offset parameter (e.g. the artists query and the albums query utilized in Query Stages B and A) are executed in parallel along the whole range of possible offset.
+Speed optimizations were done by utilizing the `multiprocessing` python library:
+	- queries that has an offset parameter (e.g. the artists query and the albums query utilized in Query Stages B and A) are executed in parallel along the whole range of possible offset.
+	- queries in stage D (fetch artists related to currently collected artists) are parallelized for each artist
 
 ```
 query, parallelized:

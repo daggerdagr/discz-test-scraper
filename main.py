@@ -54,16 +54,24 @@ def spotipyFetchGenres():
 			retry = True
 	return genres
 
+def spotipyFetchRelatedArtists(artist_id):
+	relatedArtists = spotify.artist_related_artists(artist_id)['artists']
+	logging.info("-- Found related artists: " + str(len(relatedArtists)))
+	return relatedArtists
+
 def fetchRelatedArtistsFromCurrentArtists():
 	logging.info("Fetching related artists from currently collected artists")
-	for artist_id in set(total_result.keys()):
-		relatedArtists = spotify.artist_related_artists(artist_id)['artists']
-		logging.info("-- Found related artists: " + str(len(relatedArtists)))
+	p = Pool()
+
+	results = p.map(spotipyFetchRelatedArtists, set(total_result.keys()))
+
+	for relatedArtists in results:
 		for artistJson in relatedArtists:
 			artist = simplifyArtistJson(artistJson)
 			total_result[artist['id']] = artist
-		logging.info("Total result so far: " + str(len(total_result)))
-		logging.info("Current time: {time}".format(time=datetime.now()))
+
+	logging.info("Total result so far: " + str(len(total_result)))
+	logging.info("Current time: {time}".format(time=datetime.now()))
 
 
 def fetchArtistsFromHipsterAlbums():
