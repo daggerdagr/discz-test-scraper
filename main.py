@@ -13,8 +13,7 @@ import time
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 latestYear = 2023
-earliestYear = 2022
-# earliestYear = 1899
+earliestYear = 1899
 query_limit = 50
 
 total_result = dict() # id to artist
