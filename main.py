@@ -46,10 +46,10 @@ def spotipyFetchGenres():
 			genres = spotify.recommendation_genre_seeds()['genres']
 			retry = False
 		except spotipy.SpotifyException:
-			logging.info("-- Genres fetch failed at offset: " + str(offset))
+			print("Genres fetch failed at offset: " + str(offset))
 			retry = False
 		except requests.exceptions.ReadTimeout:
-			logging.info("-- Read time out encountered. Sleeping for 5.")
+			print("Read time out encountered. Sleeping for 5.")
 			time.sleep(5)
 			retry = True
 	return genres
@@ -93,10 +93,10 @@ def spotipyFetchArtistsFromAlbums(query_param, limit, offset):
 						artist_ids.add(incomplete_artist['id'])
 			retry = False
 		except spotipy.SpotifyException:
-			logging.info("Query failed at offset: " + str(offset))
+			print("Query failed at offset: " + str(offset))
 			retry = False
 		except requests.exceptions.ReadTimeout:
-			logging.info("Read time out encountered. Sleeping for 5.")
+			print("Read time out encountered. Sleeping for 5.")
 			time.sleep(5)
 			retry = True
 	return artist_ids
@@ -114,10 +114,10 @@ def completeArtists(segment):
 				results[artist['id']] = artist
 			retry = False
 		except spotipy.SpotifyException:
-			logging.info("Artist check failed at offset: " + str(offset))
+			print("Artist check failed at offset: " + str(offset))
 			retry = False
 		except requests.exceptions.ReadTimeout:
-			logging.info("Read time out encountered. Sleeping for 5.")
+			print("Read time out encountered. Sleeping for 5.")
 			time.sleep(5)
 			retry = True
 	
@@ -167,7 +167,7 @@ def fetchTop1000ArtistPerGenre(genres):
 		for genre in genres:
 			artistQueryForParam(query_param_fmt.format(year=year, genre=genre))
 
-def artistQueryForParamFn(limit, offset, query_param):
+def spotipyArtistQueryForParamFn(limit, offset, query_param):
 	result = dict()
 	retry = True
 	while retry:
@@ -178,10 +178,10 @@ def artistQueryForParamFn(limit, offset, query_param):
 				result[artist['id']] = artist
 			retry = False
 		except spotipy.SpotifyException:
-			logging.info("Query failed at offset: " + str(offset))
+			print("Query failed at offset: " + str(offset))
 			retry = False
 		except requests.exceptions.ReadTimeout:
-			logging.info("Read time out encountered. Sleeping for 5.")
+			print("Read time out encountered. Sleeping for 5.")
 			time.sleep(5)
 			retry = True
 	return result
@@ -191,7 +191,7 @@ def artistQueryForParam(query_param):
 	p = Pool()
 	offsetRange = list(range(0, 1000, query_limit))
 	
-	results = p.starmap(artistQueryForParamFn, zip([query_limit] * len(offsetRange), offsetRange, [query_param] * len(offsetRange)))
+	results = p.starmap(spotipyArtistQueryForParamFn, zip([query_limit] * len(offsetRange), offsetRange, [query_param] * len(offsetRange)))
 	for result in results:
 		total_result.update(result)
 
