@@ -11,6 +11,20 @@ export SPOTIPY_REDIRECT_URI=https://localhost:8888/callback
 python3 main.py
 ```
 
+## Speed Optimizations
+
+Speed optimizations were done by utilizing the `multiprocessing` python library - queries that has an offset parameter (e.g. the artists query and the albums query utilized in Query Stages B and A) are executed in parallel along the whole range of possible offset.
+
+```
+query, parallelized:
+	-> query(offset=0)
+	-> query(offset=50)
+	-> query(offset=100)
+	...
+	-> query(offset=950)
+	-> query(offset=1000)
+```
+
 ## Total amount of artists projected to be fetched
 
 ```
@@ -34,15 +48,13 @@ Query "hipster" albums for every year from 2023 to 1900. Then, aggregate all art
 ##### Script Logs
 - We run this stage for partially and make some projections with the result:
 ```
-INFO:root:Start time: 2023-04-14 21:30:12.306595
+INFO:root:Start time: 2023-04-16 16:57:24.423299
 INFO:root:Fetching for album query parameters: tag:hipster year:2023
-INFO:root:Album query offset maximum hit at: 1000
-INFO:root:Total result so far: 769
+INFO:root:Total result so far: 733
 ...
+INFO:root:Current time: 2023-04-16 16:59:50.166898
 INFO:root:Fetching for album query parameters: tag:hipster year:1980
-INFO:root:Album query offset maximum hit at: 1000
-INFO:root:Total result so far: 34356
-INFO:root:Current time: 2023-04-14 21:42:15.922796
+INFO:root:Total result so far: 34395
 # Script interrupted here
 ```
 - Calculations:

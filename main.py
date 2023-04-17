@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from spotipy.oauth2 import SpotifyClientCredentials
 import json
 import logging
+import requests
 import spotipy
 import time
 
@@ -12,7 +13,8 @@ import time
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 latestYear = 2023
-earliestYear = 1899
+earliestYear = 2022
+# earliestYear = 1899
 query_limit = 50
 
 total_result = dict() # id to artist
@@ -22,12 +24,12 @@ def main():
 	logging.basicConfig(filename=start_time.strftime("%Y%m%d-%H%M%S")+".log", level=logging.INFO)
 	logging.info("Start time: {time}".format(time=start_time))
 	
-	genres = spotify.recommendation_genre_seeds()['genres']
+	genres = spotipyFetchGenres()
 
-	# artistQueryForParam("year:0-" + str(earliestYear), total_result) # Query Stage C
-	# fetchArtistsFromHipsterAlbums(total_result) # Query Stage B
-	# fetchRelatedArtistsFromCurrentArtists(total_result) # Query Stage D
-	fetchTop1000ArtistPerGenre(total_result, genres) # Query Stage A
+	artistQueryForParam("year:0-" + str(earliestYear)) # Query Stage C
+	fetchArtistsFromHipsterAlbums() # Query Stage B
+	fetchRelatedArtistsFromCurrentArtists() # Query Stage D
+	fetchTop1000ArtistPerGenre(genres) # Query Stage A
 
 	json_object = json.dumps(total_result)
 
@@ -37,7 +39,23 @@ def main():
 	logging.info("End time: {time}".format(time=end_time))
 	logging.info("Total time spent: {total}".format(total=end_time - start_time))
 
-def fetchRelatedArtistsFromCurrentArtists(total_result):
+def spotipyFetchGenres():
+	genres = []
+	retry = True
+	while retry:
+		try:
+			genres = spotify.recommendation_genre_seeds()['genres']
+			retry = False
+		except spotipy.SpotifyException:
+			logging.info("-- Genres fetch failed at offset: " + str(offset))
+			retry = False
+		except requests.exceptions.ReadTimeout:
+			logging.info("-- Read time out encountered. Sleeping for 5.")
+			time.sleep(5)
+			retry = True
+	return genres
+
+def fetchRelatedArtistsFromCurrentArtists():
 	logging.info("Fetching related artists from currently collected artists")
 	for artist_id in set(total_result.keys()):
 		relatedArtists = spotify.artist_related_artists(artist_id)['artists']
@@ -49,48 +67,93 @@ def fetchRelatedArtistsFromCurrentArtists(total_result):
 		logging.info("Current time: {time}".format(time=datetime.now()))
 
 
-def fetchArtistsFromHipsterAlbums(total_result):
+def fetchArtistsFromHipsterAlbums():
 	# Fetching artists from hipster albums every year from latestYear to 0
 	query_param_fmt = "tag:hipster year:{year}"
 	for year in range(latestYear, earliestYear, -1):
-		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year), total_result)
+		fetchArtistsFromAlbumQuery(query_param_fmt.format(year=year))
 
-def fetchArtistsFromAlbumQuery(query_param, total_result):
-	logging.info("Fetching for album query parameters: " + query_param)
-	offset = 0
-	limit = 50
-	valid = True
-	while valid and offset < 1000:
+def spotipyFetchArtistsFromAlbums(query_param, limit, offset):
+	artist_ids = set()
+	retry = True
+	while retry:
 		try:
 			query_result = spotify.search(query_param, limit=limit, offset=offset, type='album', market='US')
 			
-			artist_ids = []
 			for album in query_result['albums']['items']:
 				if album:
 					for incomplete_artist in album['artists']:
-						artist_ids.append(incomplete_artist['id'])
-
-			artistCheckSegmentStart = 0
-			artistCheckSegmentEnd = 50
-
-			while artistCheckSegmentStart < len(artist_ids):
-				artistCheckSegment = artist_ids[artistCheckSegmentStart:artistCheckSegmentEnd]
-				artistsJson = spotify.artists(artistCheckSegment)['artists']
-				for artistJson in artistsJson:
-					artist = simplifyArtistJson(artistJson)
-					total_result[artist['id']] = artist
-				artistCheckSegmentStart = artistCheckSegmentEnd
-				artistCheckSegmentEnd += 50
-
-			offset += limit
+						artist_ids.add(incomplete_artist['id'])
+			retry = False
 		except spotipy.SpotifyException:
-			valid = False
-	logging.info("Album query offset maximum hit at: " + str(offset))
+			logging.info("Query failed at offset: " + str(offset))
+			retry = False
+		except requests.exceptions.ReadTimeout:
+			logging.info("Read time out encountered. Sleeping for 5.")
+			time.sleep(5)
+			retry = True
+	return artist_ids
+
+def completeArtists(segment):
+	results = dict()
+	artistsJson = spotify.artists(segment)['artists']
+	retry = True
+	while retry:
+		try:
+			artistJsons = spotify.artists(segment)['artists']
+
+			for artistJson in artistJsons:
+				artist = simplifyArtistJson(artistJson)
+				results[artist['id']] = artist
+			retry = False
+		except spotipy.SpotifyException:
+			logging.info("Artist check failed at offset: " + str(offset))
+			retry = False
+		except requests.exceptions.ReadTimeout:
+			logging.info("Read time out encountered. Sleeping for 5.")
+			time.sleep(5)
+			retry = True
+	
+	return results
+
+def divideToFiftyElemLists(s):
+	result = []
+
+	segmentStart = 0
+	segmentEnd = 50
+
+	while segmentStart < len(s):
+		segment = s[segmentStart:segmentEnd]
+		result.append(segment)
+		segmentStart = segmentEnd
+		segmentEnd += 50
+	return result
+
+def fetchArtistsFromAlbumQuery(query_param):
+	logging.info("Fetching for album query parameters: " + query_param)
+
+	p = Pool()
+
+	offsetRange = list(range(0, 1000, query_limit))
+	
+	# Obtain incompleteArtists from hipster albums
+	results = p.starmap(spotipyFetchArtistsFromAlbums, zip([query_param] * len(offsetRange), [query_limit] * len(offsetRange), offsetRange))
+	allIncompleteArtists = set()
+	for result in results:
+		allIncompleteArtists.update(result)
+
+	# complete artists using an artist query to Spotify	
+	artistsTo50s = divideToFiftyElemLists(list(allIncompleteArtists))
+	completedArtistsSegments = p.map(completeArtists, artistsTo50s)
+
+	for segment in completedArtistsSegments:
+		total_result.update(segment)
+
 	logging.info("Total result so far: " + str(len(total_result)))
 	logging.info("Current time: {time}".format(time=datetime.now()))
 	return total_result
 
-def fetchTop1000ArtistPerGenre(total_result, genres):
+def fetchTop1000ArtistPerGenre(genres):
 	# Fetching approximately top 1000 artists per year from latestYear to 1900
 	query_param_fmt = "year:{year} genre:{genre}"
 	for year in range(latestYear, earliestYear, -1):
@@ -99,20 +162,21 @@ def fetchTop1000ArtistPerGenre(total_result, genres):
 
 def artistQueryForParamFn(limit, offset, query_param):
 	result = dict()
-	execute = True
-	while execute:
+	retry = True
+	while retry:
 		try:
 			query_result = spotify.search(query_param, limit=limit, offset=offset, type='artist', market='US')
 			for item in query_result['artists']['items']:
 				artist = simplifyArtistJson(item)
 				result[artist['id']] = artist
-			execute = False
+			retry = False
 		except spotipy.SpotifyException:
 			logging.info("Query failed at offset: " + str(offset))
-			execute = False;
+			retry = False
 		except requests.exceptions.ReadTimeout:
 			logging.info("Read time out encountered. Sleeping for 5.")
 			time.sleep(5)
+			retry = True
 	return result
 
 def artistQueryForParam(query_param):
