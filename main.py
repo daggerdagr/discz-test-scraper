@@ -13,8 +13,10 @@ import time
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 latestYear = 2023
-earliestYear = 1899
+# earliestYear = 1899
+earliestYear = 2022
 query_limit = 50
+retry_sleep = 5
 
 total_result = dict() # id to artist
 
@@ -48,9 +50,10 @@ def spotipyFetchGenres():
 		except spotipy.SpotifyException:
 			logging.info("-- Genres fetch failed at offset: " + str(offset))
 			retry = False
-		except requests.exceptions.ReadTimeout:
-			logging.info("-- Read time out encountered. Sleeping for 5.")
-			time.sleep(5)
+		except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as error:
+			logging.info("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			print("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			time.sleep(retry_sleep)
 			retry = True
 	return genres
 
@@ -95,9 +98,10 @@ def spotipyFetchArtistsFromAlbums(query_param, limit, offset):
 		except spotipy.SpotifyException:
 			logging.info("Query failed at offset: " + str(offset))
 			retry = False
-		except requests.exceptions.ReadTimeout:
-			logging.info("Read time out encountered. Sleeping for 5.")
-			time.sleep(5)
+		except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as error:
+			logging.info("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			print("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			time.sleep(retry_sleep)
 			retry = True
 	return artist_ids
 
@@ -116,9 +120,10 @@ def completeArtists(segment):
 		except spotipy.SpotifyException:
 			logging.info("Artist check failed at offset: " + str(offset))
 			retry = False
-		except requests.exceptions.ReadTimeout:
-			logging.info("Read time out encountered. Sleeping for 5.")
-			time.sleep(5)
+		except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as error:
+			logging.info("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			print("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			time.sleep(retry_sleep)
 			retry = True
 	
 	return results
@@ -180,9 +185,10 @@ def artistQueryForParamFn(limit, offset, query_param):
 		except spotipy.SpotifyException:
 			logging.info("Query failed at offset: " + str(offset))
 			retry = False
-		except requests.exceptions.ReadTimeout:
-			logging.info("Read time out encountered. Sleeping for 5.")
-			time.sleep(5)
+		except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as error:
+			logging.info("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			print("Read time out encountered {error}. Sleeping for {retry_sleep}.".format(error=error, retry_sleep=retry_sleep))
+			time.sleep(retry_sleep)
 			retry = True
 	return result
 
