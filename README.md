@@ -12,6 +12,7 @@ pip install spotipy --upgrade
 # or install spotipy in general
 
 rm .cache && python3 main.py
+# Script produces a log to checke the progress of the script
 # have to clear cache due to Spotipy bug re: querying artists' related artist
 ```
 
